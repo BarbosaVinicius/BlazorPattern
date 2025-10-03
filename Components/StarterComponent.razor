@@ -1,0 +1,47 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="starter-component">
+    <div class="starter-inner container">
+        <h2 class="starter-title">@Title</h2>
+
+        <div class="starter-content text-center">
+            @ChildContent
+        </div>
+
+        <div class="starter-actions text-center">
+            <a href="javascript:void(0);" @onclick="ShowModal">Let's start!</a>
+        </div>
+    </div>
+</div>
+
+<ModalDialog Title="@ModalTitle"
+             IsVisible="@isModalVisible"
+             IsVisibleChanged="@OnModalVisibilityChanged"
+             ShowCancel="true"
+             ShowConfirm="true"
+             OnCancel="HandleCancel"
+             OnConfirm="HandleConfirm">
+    <p>@ModalMessage</p>
+</ModalDialog>
+
+@code {
+    private bool isModalVisible = false;
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string ModalTitle { get; set; } = "Proceed?";
+    [Parameter] public string ModalMessage { get; set; } = "Do you want to continue?";
+    [Parameter] public EventCallback OnConfirmAction { get; set; }
+
+    [Parameter] public RenderFragment ChildContent { get; set; }
+
+    private void ShowModal(MouseEventArgs e) => isModalVisible = true;
+    private void OnModalVisibilityChanged(bool visible) => isModalVisible = visible;
+    private void HandleCancel() => isModalVisible = false;
+    private void HandleConfirm()
+    {
+        isModalVisible = false;
+        if (OnConfirmAction.HasDelegate)
+            OnConfirmAction.InvokeAsync(null);
+    }
+}

@@ -1,0 +1,22 @@
+﻿@page "/"
+@using BlazorPattern.Components
+@inject NavigationManager Navigation
+
+<div class="text-center">
+    <StarterComponent Title="Welcome to Blazor Pattern" ModalTitle="Modal Example"
+        ModalMessage="Here you create the logic for your modal." OnConfirmAction="OnConfirmHandler">
+        <div class="text-center p-3 mb-2 bg-warning text-dark border border-dark">
+            Welcome to your .Net Blazor application.
+        </div>
+    </StarterComponent>
+</div>
+
+
+@code {
+    
+    private Task OnConfirmHandler()
+    {
+        Navigation.NavigateTo("/newpage");
+        return Task.CompletedTask;
+    }
+}

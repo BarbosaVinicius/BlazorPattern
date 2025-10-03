@@ -1,0 +1,56 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="modal-overlay" style="@(IsVisible ? "display: block;" : "display: none;")">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>@Title</h3>
+        </div>
+        <div class="modal-body">
+            @ChildContent
+        </div>
+        <div class="modal-footer">
+            @if (ShowCancel)
+            {
+                <button class="btn btn-secondary" @onclick="OnCancelClick">Cancel</button>
+            }
+            @if (ShowConfirm)
+            {
+                <button class="btn btn-primary" @onclick="OnConfirmClick">Confirm</button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    [Parameter] public RenderFragment ChildContent { get; set; }
+
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    [Parameter] public bool ShowCancel { get; set; } = true;
+    [Parameter] public bool ShowConfirm { get; set; } = false;
+
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    private void OnCancelClick(MouseEventArgs e)
+    {
+        IsVisible = false;
+        _ = IsVisibleChanged.InvokeAsync(IsVisible);
+        if (OnCancel.HasDelegate)
+        {
+            OnCancel.InvokeAsync(null);
+        }
+    }
+
+    private void OnConfirmClick(MouseEventArgs e)
+    {
+        if (OnConfirm.HasDelegate)
+        {
+            OnConfirm.InvokeAsync(null);
+        }
+    }
+}

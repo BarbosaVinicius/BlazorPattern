@@ -1,0 +1,18 @@
+@page "/newpage"
+@inject NavigationManager Navigation
+
+<div class="text-center">
+    <h3>New Page</h3>
+    <div class="text-center p-3 mb-2 bg-warning text-dark border border-dark">You arrived here after confirming in the
+        modal.</div>
+
+    <button class="btn btn-primary" @onclick="ReturnToIndex">Home</button>
+</div>
+
+@code
+{
+    private void ReturnToIndex()
+    {
+        Navigation.NavigateTo("/");
+    }
+}
