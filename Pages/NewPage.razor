@@ -1,8 +1,12 @@
 @page "/newpage"
+@* Interactive because of the @onclick handler below. *@
+@rendermode InteractiveServer
 @inject NavigationManager Navigation
 
+<PageTitle>New Page</PageTitle>
+
 <div class="text-center">
-    <h3>New Page</h3>
+    <h1 class="h3">New Page</h1>
     <div class="text-center p-3 mb-2 bg-warning text-dark border border-dark">You arrived here after confirming in the
         modal.</div>
 

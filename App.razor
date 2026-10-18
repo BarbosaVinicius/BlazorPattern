@@ -1,10 +1,23 @@
-﻿<Router AppAssembly="@typeof(Program).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-    </Found>
-    <NotFound>
-        <LayoutView Layout="@typeof(MainLayout)">        
-            <p>Sorry, there's nothing at this address.</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/site.css" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    @* Left static on purpose: an interactive HeadOutlet would open a SignalR circuit on every page,
+       including pages that are pure static SSR. <PageTitle> still works in both modes. *@
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes />
+
+    @* Unified Blazor script: handles enhanced navigation, streaming rendering and starts circuits on demand. *@
+    <script src="_framework/blazor.web.js"></script>
+</body>
+
+</html>

@@ -1,56 +1,73 @@
-@using Microsoft.AspNetCore.Components
-@using Microsoft.AspNetCore.Components.Web
+@*
+    Reusable modal dialog.
 
-<div class="modal-overlay" style="@(IsVisible ? "display: block;" : "display: none;")">
-    <div class="modal-container">
-        <div class="modal-header">
-            <h3>@Title</h3>
-        </div>
-        <div class="modal-body">
-            @ChildContent
-        </div>
-        <div class="modal-footer">
-            @if (ShowCancel)
+    Usage:
+      <ModalDialog @bind-IsVisible="show" Title="Confirm" ShowConfirm="true" OnConfirm="Save">...</ModalDialog>
+
+    Markup is only emitted while visible, so a closed modal costs nothing in the render tree.
+    Must be used from an interactive component (it has event handlers).
+*@
+@if (IsVisible)
+{
+    <div class="modal-overlay" @onkeydown="OnKeyDown" @onkeydown:stopPropagation>
+        <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="@titleId" tabindex="-1">
+            <div class="modal-header">
+                <h3 id="@titleId">@Title</h3>
+            </div>
+            <div class="modal-body">
+                @ChildContent
+            </div>
+            @if (ShowCancel || ShowConfirm)
             {
-                <button class="btn btn-secondary" @onclick="OnCancelClick">Cancel</button>
-            }
-            @if (ShowConfirm)
-            {
-                <button class="btn btn-primary" @onclick="OnConfirmClick">Confirm</button>
+                <div class="modal-footer">
+                    @if (ShowCancel)
+                    {
+                        <button type="button" class="btn btn-secondary" @onclick="CancelAsync">Cancel</button>
+                    }
+                    @if (ShowConfirm)
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="ConfirmAsync">Confirm</button>
+                    }
+                </div>
             }
         </div>
     </div>
-</div>
+}
 
 @code {
+    private readonly string titleId = $"modal-title-{Guid.NewGuid():N}";
+
+    /// <summary>Heading shown at the top of the dialog.</summary>
     [Parameter] public string Title { get; set; } = string.Empty;
 
-    [Parameter] public RenderFragment ChildContent { get; set; }
+    /// <summary>Dialog body.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    /// <summary>Whether the dialog is shown. Supports <c>@@bind-IsVisible</c>.</summary>
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
 
+    /// <summary>Shows the Cancel button (also bound to the Escape key).</summary>
     [Parameter] public bool ShowCancel { get; set; } = true;
+
+    /// <summary>Shows the Confirm button. The caller decides whether to close the dialog in <see cref="OnConfirm"/>.</summary>
     [Parameter] public bool ShowConfirm { get; set; } = false;
 
+    /// <summary>Raised after the dialog is closed through Cancel or Escape.</summary>
     [Parameter] public EventCallback OnCancel { get; set; }
+
+    /// <summary>Raised when Confirm is clicked.</summary>
     [Parameter] public EventCallback OnConfirm { get; set; }
 
-    private void OnCancelClick(MouseEventArgs e)
+    private async Task CancelAsync()
     {
         IsVisible = false;
-        _ = IsVisibleChanged.InvokeAsync(IsVisible);
-        if (OnCancel.HasDelegate)
-        {
-            OnCancel.InvokeAsync(null);
-        }
+        await IsVisibleChanged.InvokeAsync(false);
+        await OnCancel.InvokeAsync();
     }
 
-    private void OnConfirmClick(MouseEventArgs e)
-    {
-        if (OnConfirm.HasDelegate)
-        {
-            OnConfirm.InvokeAsync(null);
-        }
-    }
+    private Task ConfirmAsync() => OnConfirm.InvokeAsync();
+
+    private Task OnKeyDown(KeyboardEventArgs e) =>
+        e.Key == "Escape" ? CancelAsync() : Task.CompletedTask;
 }

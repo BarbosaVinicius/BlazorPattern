@@ -1,0 +1,198 @@
+@page "/patterns"
+@*
+    CRUD example for the Pattern feature.
+
+    - InteractiveServer: this page needs event handlers, so it opts in per page (the rest of the site stays static).
+    - Prerendering + PersistentComponentState: the page is rendered once on the server for a fast first paint,
+      and the loaded data is handed to the interactive instance so the query does not run twice.
+*@
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IPatternService Service
+@inject PersistentComponentState ApplicationState
+
+<PageTitle>Patterns</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Patterns</h1>
+    <button class="btn btn-primary" @onclick="OpenCreate">New pattern</button>
+</div>
+
+@if (errorMessage is not null)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+
+@if (patterns is null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (patterns.Count == 0)
+{
+    <p>No patterns yet. Create the first one.</p>
+}
+else
+{
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Description</th>
+                <th scope="col" class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @* @key lets Blazor reuse the DOM row of an item when the list changes instead of re-diffing by position. *@
+            @foreach (var pattern in patterns)
+            {
+                <tr @key="pattern.Id">
+                    <td>@pattern.Name</td>
+                    <td>@pattern.Description</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenEdit(pattern)">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => AskDelete(pattern)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<ModalDialog Title="@(editing.Id == 0 ? "New pattern" : "Edit pattern")"
+             @bind-IsVisible="isFormVisible"
+             ShowCancel="false" ShowConfirm="false">
+    <EditForm Model="editing" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label class="form-label" for="pattern-name">Name</label>
+            <InputText id="pattern-name" class="form-control" @bind-Value="editing.Name" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="pattern-description">Description</label>
+            <InputTextArea id="pattern-description" class="form-control" @bind-Value="editing.Description" />
+        </div>
+
+        <div class="text-end">
+            <button type="button" class="btn btn-secondary" @onclick="() => isFormVisible = false">Cancel</button>
+            <button type="submit" class="btn btn-primary" disabled="@saving">Save</button>
+        </div>
+    </EditForm>
+</ModalDialog>
+
+<ModalDialog Title="Delete pattern"
+             IsVisible="pendingDelete is not null"
+             IsVisibleChanged="visible => { if (!visible) pendingDelete = null; }"
+             ShowCancel="true" ShowConfirm="true"
+             OnConfirm="ConfirmDeleteAsync">
+    <p>Delete <strong>@pendingDelete?.Name</strong>? This cannot be undone.</p>
+</ModalDialog>
+
+@code {
+    private const string StateKey = "patterns";
+
+    private List<Pattern>? patterns;
+    private Pattern editing = new();
+    private Pattern? pendingDelete;
+    private bool isFormVisible;
+    private bool saving;
+    private string? errorMessage;
+    private PersistingComponentStateSubscription persistingSubscription;
+
+    protected override async Task OnInitializedAsync()
+    {
+        persistingSubscription = ApplicationState.RegisterOnPersisting(PersistPatterns);
+
+        // On the interactive pass, reuse the data fetched during prerendering.
+        if (ApplicationState.TryTakeFromJson<List<Pattern>>(StateKey, out var restored))
+        {
+            patterns = restored;
+        }
+        else
+        {
+            patterns = (await Service.GetAllAsync()).ToList();
+        }
+    }
+
+    private Task PersistPatterns()
+    {
+        ApplicationState.PersistAsJson(StateKey, patterns);
+        return Task.CompletedTask;
+    }
+
+    private void OpenCreate()
+    {
+        editing = new Pattern();
+        errorMessage = null;
+        isFormVisible = true;
+    }
+
+    // Edit a copy so cancelling the form never mutates the list.
+    private void OpenEdit(Pattern pattern)
+    {
+        editing = new Pattern { Id = pattern.Id, Name = pattern.Name, Description = pattern.Description };
+        errorMessage = null;
+        isFormVisible = true;
+    }
+
+    private void AskDelete(Pattern pattern)
+    {
+        errorMessage = null;
+        pendingDelete = pattern;
+    }
+
+    private async Task SaveAsync()
+    {
+        saving = true;
+        errorMessage = null;
+        try
+        {
+            if (editing.Id == 0)
+            {
+                patterns!.Add(await Service.CreateAsync(editing));
+            }
+            else
+            {
+                var updated = await Service.UpdateAsync(editing);
+                var index = patterns!.FindIndex(p => p.Id == updated.Id);
+                if (index >= 0) patterns[index] = updated;
+            }
+            isFormVisible = false;
+        }
+        catch (ValidationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (KeyNotFoundException ex)
+        {
+            // Someone else deleted it meanwhile: resync the list and close the form.
+            errorMessage = ex.Message;
+            isFormVisible = false;
+            patterns = (await Service.GetAllAsync()).ToList();
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        var target = pendingDelete;
+        pendingDelete = null;
+        if (target is null) return;
+
+        try
+        {
+            await Service.DeleteAsync(target.Id);
+        }
+        catch (KeyNotFoundException)
+        {
+            // Already gone; the refreshed list below is the desired end state anyway.
+        }
+        patterns = (await Service.GetAllAsync()).ToList();
+    }
+
+    public void Dispose() => persistingSubscription.Dispose();
+}

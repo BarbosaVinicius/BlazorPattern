@@ -1,19 +1,24 @@
 ﻿@page "/"
 @using BlazorPattern.Components
+@* The whole page is interactive because StarterComponent receives delegates and a RenderFragment,
+   which cannot be serialized across a static -> interactive boundary. *@
+@rendermode InteractiveServer
 @inject NavigationManager Navigation
+
+<PageTitle>Home</PageTitle>
 
 <div class="text-center">
     <StarterComponent Title="Welcome to Blazor Pattern" ModalTitle="Modal Example"
         ModalMessage="Here you create the logic for your modal." OnConfirmAction="OnConfirmHandler">
         <div class="text-center p-3 mb-2 bg-warning text-dark border border-dark">
-            Welcome to your .Net Blazor application.
+            Welcome to your .NET Blazor application.
         </div>
     </StarterComponent>
+
+    <p class="mt-3">Or jump straight to the <a href="patterns">Patterns</a> CRUD example.</p>
 </div>
 
-
 @code {
-    
     private Task OnConfirmHandler()
     {
         Navigation.NavigateTo("/newpage");

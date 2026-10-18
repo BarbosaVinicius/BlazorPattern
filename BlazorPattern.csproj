@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Emit XML docs so IDE tooltips show the summaries; CS1591 (missing docs) is not enforced on Razor output. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Identity.Web" Version="1.*" />
-    <PackageReference Include="Microsoft.Identity.Web.UI" Version="1.*" />
-  </ItemGroup>
 </Project>

@@ -33,15 +33,14 @@
     [Parameter] public string ModalMessage { get; set; } = "Do you want to continue?";
     [Parameter] public EventCallback OnConfirmAction { get; set; }
 
-    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private void ShowModal(MouseEventArgs e) => isModalVisible = true;
     private void OnModalVisibilityChanged(bool visible) => isModalVisible = visible;
     private void HandleCancel() => isModalVisible = false;
-    private void HandleConfirm()
+    private Task HandleConfirm()
     {
         isModalVisible = false;
-        if (OnConfirmAction.HasDelegate)
-            OnConfirmAction.InvokeAsync(null);
+        return OnConfirmAction.InvokeAsync();
     }
 }

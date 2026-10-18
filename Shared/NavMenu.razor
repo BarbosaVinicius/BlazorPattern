@@ -1,20 +1,10 @@
-﻿<div class="top-row pl-4 navbar navbar-dark">
-    <a class="navbar-brand" href="">BlazorPattern</a>
-    <button class="navbar-toggler" @onclick="ToggleNavMenu">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-</div>
-
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">    
-</div>
-
-@code {
-    private bool collapseNavMenu = true;
-
-    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
-    }
-}
+﻿@* Purely static markup: no event handlers, so it renders with zero interactivity cost in the static layout. *@
+<header class="navbar navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="">BlazorPattern</a>
+        <nav class="nav" aria-label="Main">
+            <NavLink class="nav-link text-light" href="" Match="NavLinkMatch.All">Home</NavLink>
+            <NavLink class="nav-link text-light" href="patterns">Patterns</NavLink>
+        </nav>
+    </div>
+</header>

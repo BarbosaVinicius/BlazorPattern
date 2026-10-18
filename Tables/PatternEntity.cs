@@ -33,7 +33,7 @@ namespace BlazorPattern.Models.Entities
         /// Description or additional info.
         /// </summary>
         [Column("description", TypeName = "varchar(500)")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// Creation timestamp.

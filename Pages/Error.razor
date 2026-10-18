@@ -1,0 +1,29 @@
+@page "/Error"
+@using System.Diagnostics
+
+<PageTitle>Error</PageTitle>
+
+<h1 class="text-danger">Error.</h1>
+<h2 class="text-danger">An error occurred while processing your request.</h2>
+
+@if (!string.IsNullOrEmpty(requestId))
+{
+    <p>
+        <strong>Request ID:</strong> <code>@requestId</code>
+    </p>
+}
+
+<p>
+    Detailed errors are only shown in the <strong>Development</strong> environment, which must not be
+    enabled on deployed applications. Use the request ID above to find this failure in the logs.
+</p>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? requestId;
+
+    protected override void OnInitialized() =>
+        requestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}
