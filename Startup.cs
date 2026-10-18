@@ -29,6 +29,8 @@ namespace BlazorPattern
             services.AddRazorPages();
             services.AddServerSideBlazor();
 
+            services.AddSingleton<IPatternRepository, InMemoryPatternRepository>();
+
             //Registro do PatternService
             services.AddScoped<IPatternService, PatternService>();         
         }

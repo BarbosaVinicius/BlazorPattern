@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BlazorPattern.Models;
+using Microsoft.Extensions.Logging;
 
 namespace BlazorPattern.Services
 {
@@ -11,47 +12,71 @@ namespace BlazorPattern.Services
     /// </summary>
     public class PatternService : IPatternService
     {
-        // Inject dependencies like repository or logger here
-        // private readonly IPatternRepository _repository;
-        // private readonly ILogger<PatternService> _logger;
+        private const int MaxNameLength = 200;
 
-        public PatternService(
-            /* IPatternRepository repository, 
-               ILogger<PatternService> logger */)
+        private readonly IPatternRepository _repository;
+        private readonly ILogger<PatternService> _logger;
+
+        public PatternService(IPatternRepository repository, ILogger<PatternService> logger)
         {
-            // _repository = repository;
-            // _logger = logger;
+            _repository = repository;
+            _logger = logger;
         }
 
-        public Task<IEnumerable<Pattern>> GetAllAsync()
-        {
-            // TODO: implement logic to retrieve all patterns
-            // e.g. return _repository.GetAllAsync();
-            throw new NotImplementedException();
-        }
+        public Task<IEnumerable<Pattern>> GetAllAsync() => _repository.GetAllAsync();
 
         public Task<Pattern> GetByIdAsync(int id)
         {
-            // TODO: validate id, check if exists, return or throw
-            throw new NotImplementedException();
+            ValidateId(id);
+            return _repository.GetByIdAsync(id);
         }
 
-        public Task<Pattern> CreateAsync(Pattern item)
+        public async Task<Pattern> CreateAsync(Pattern item)
         {
-            // TODO: validate item, apply business rules, persist via repository
-            throw new NotImplementedException();
+            ValidateItem(item);
+
+            var created = await _repository.AddAsync(item);
+            _logger.LogInformation("Pattern {Id} created.", created.Id);
+            return created;
         }
 
-        public Task<Pattern> UpdateAsync(Pattern item)
+        public async Task<Pattern> UpdateAsync(Pattern item)
         {
-            // TODO: validate existence, apply business rules, update via repository
-            throw new NotImplementedException();
+            ValidateItem(item);
+            ValidateId(item.Id);
+
+            if (!await _repository.UpdateAsync(item))
+                throw new KeyNotFoundException($"Pattern {item.Id} not found.");
+
+            _logger.LogInformation("Pattern {Id} updated.", item.Id);
+            return item;
         }
 
-        public Task DeleteAsync(int id)
+        public async Task DeleteAsync(int id)
         {
-            // TODO: validate id, ensure exists, delete via repository
-            throw new NotImplementedException();
+            ValidateId(id);
+
+            if (!await _repository.DeleteAsync(id))
+                throw new KeyNotFoundException($"Pattern {id} not found.");
+
+            _logger.LogInformation("Pattern {Id} deleted.", id);
+        }
+
+        private static void ValidateId(int id)
+        {
+            if (id <= 0)
+                throw new ArgumentOutOfRangeException(nameof(id), "Id must be greater than zero.");
+        }
+
+        private static void ValidateItem(Pattern item)
+        {
+            ArgumentNullException.ThrowIfNull(item);
+
+            if (string.IsNullOrWhiteSpace(item.Name))
+                throw new ArgumentException("Name is required.", nameof(item));
+
+            if (item.Name.Length > MaxNameLength)
+                throw new ArgumentException($"Name must have at most {MaxNameLength} characters.", nameof(item));
         }
     }
 }
